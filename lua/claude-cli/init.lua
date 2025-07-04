@@ -29,6 +29,10 @@ local function setup_commands()
   vim.api.nvim_create_user_command("ClaudeEdit", function(opts)
     require("claude-cli.client").edit_selection(opts.args)
   end, { nargs = "*", range = true })
+
+  vim.api.nvim_create_user_command("ClaudeSend", function(opts)
+    require("claude-cli.client").send_command(opts.args)
+  end, { nargs = "*" })
 end
 
 function M.setup(opts)

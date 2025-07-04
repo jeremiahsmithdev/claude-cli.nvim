@@ -143,4 +143,112 @@ function M.status()
   end
 end
 
+function M.send_command(command)
+  if not command or command == "" then
+    log("Please provide a command to send", vim.log.levels.WARN)
+    return
+  end
+
+  -- Try to send via tmux first (most reliable for Claude CLI)
+  local tmux_success = M.send_via_tmux(command)
+  if tmux_success then
+    log("Sent command to Claude CLI via tmux: " .. command)
+    return
+  end
+
+  -- Fallback to TTY method
+  M.send_via_tty(command)
+end
+
+function M.send_via_tmux(command)
+  -- Look for Claude CLI in tmux sessions
+  local handle = io.popen("tmux list-sessions 2>/dev/null | grep claude")
+  local session_line = handle:read("*l")
+  handle:close()
+
+  if not session_line then
+    return false
+  end
+
+  -- Extract session name (everything before the colon)
+  local session_name = session_line:match("^([^:]+):")
+  if not session_name then
+    return false
+  end
+
+  -- Find the pane with node (Claude CLI)
+  local pane_handle = io.popen("tmux list-panes -t " .. session_name .. " -F '#{pane_id}: #{pane_current_command}' 2>/dev/null | grep node")
+  local pane_line = pane_handle:read("*l")
+  pane_handle:close()
+
+  if not pane_line then
+    return false
+  end
+
+  -- Extract pane ID
+  local pane_id = pane_line:match("^([^:]+):")
+  if not pane_id then
+    return false
+  end
+
+  -- Send the command via tmux
+  local cmd = string.format("tmux send-keys -t %s '%s' Enter", pane_id, command:gsub("'", "'\"'\"'"))
+  local result = os.execute(cmd)
+  
+  return result == 0
+end
+
+function M.send_via_tty(command)
+  -- Find the Claude CLI process
+  local handle = io.popen("ps aux | grep -E '^[^[:space:]]+[[:space:]]+[0-9]+.*claude[[:space:]]*$' | grep -v grep | head -1 | awk '{print $2}'")
+  local claude_pid = handle:read("*l")
+  handle:close()
+
+  if not claude_pid or claude_pid == "" then
+    log("Claude CLI process not found", vim.log.levels.ERROR)
+    M.send_command_via_file(command)
+    return
+  end
+
+  -- Try to send the command to Claude CLI's stdin via the TTY
+  local tty_handle = io.popen("lsof -p " .. claude_pid .. " | grep -E 'tty|pts' | head -1 | awk '{print $NF}'")
+  local tty_path = tty_handle:read("*l")
+  tty_handle:close()
+
+  if tty_path and tty_path ~= "" then
+    -- Try to write to the TTY
+    local success, err = pcall(function()
+      local tty_file = io.open(tty_path, "w")
+      if tty_file then
+        tty_file:write(command .. "\n")
+        tty_file:close()
+        log("Sent command to Claude CLI via TTY: " .. command)
+      else
+        error("Could not open TTY")
+      end
+    end)
+
+    if not success then
+      log("Failed to send to TTY: " .. tostring(err), vim.log.levels.ERROR)
+      M.send_command_via_file(command)
+    end
+  else
+    log("Could not find Claude CLI TTY", vim.log.levels.ERROR)
+    M.send_command_via_file(command)
+  end
+end
+
+function M.send_command_via_file(command)
+  -- Create a temporary file with the command
+  local temp_file = "/tmp/claude_nvim_command.txt"
+  local file = io.open(temp_file, "w")
+  if file then
+    file:write(command .. "\n")
+    file:close()
+    log("Command written to " .. temp_file .. " - you can copy/paste it to Claude CLI")
+  else
+    log("Failed to write command to temporary file", vim.log.levels.ERROR)
+  end
+end
+
 return M

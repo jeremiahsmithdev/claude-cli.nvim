@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__MCP_Neovim_Server__vim_buffer",
+      "mcp__MCP_Neovim_Server__vim_command",
+      "Bash(tmux send-keys:*)"
+    ],
+    "deny": []
+  }
+}
