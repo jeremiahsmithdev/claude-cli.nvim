@@ -191,9 +191,20 @@ function M.send_via_tmux(command)
     return false
   end
 
-  -- Send the command via tmux
-  local cmd = string.format("tmux send-keys -t %s '%s' Enter", pane_id, command:gsub("'", "'\"'\"'"))
-  local result = os.execute(cmd)
+  -- Send the command via tmux with delayed Enter (Test 11 approach)
+  -- First send the text, then send Enter after a delay to ensure proper context
+  local escaped_command = command:gsub("'", "'\"'\"'")
+  
+  -- Send text first
+  local text_cmd = string.format("tmux send-keys -t %s '%s'", pane_id, escaped_command)
+  os.execute(text_cmd)
+  
+  -- Small delay to separate text input from submission (like Test 11)
+  os.execute("sleep 0.1")
+  
+  -- Send Enter as a separate action
+  local enter_cmd = string.format("tmux send-keys -t %s Enter", pane_id)
+  local result = os.execute(enter_cmd)
   
   return result == 0
 end
