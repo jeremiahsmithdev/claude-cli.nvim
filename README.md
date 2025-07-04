@@ -153,10 +153,6 @@ This repository includes `.claude/settings.local.json` with commonly used MCP pe
 
 **⚠️ Important Security Note**: Always use version control (git) frequently when working with AI assistants. The included permissions are suggestions - review and adjust them based on your comfort level and needs.
 ## Development
-## The Story Behind ClaudeSend
-
-Curious about the journey of implementing the `:ClaudeSend` command? Read [The Tale of the Delayed Enter Key](story.md) - a whimsical story about our adventures in terminal automation and the discovery of the 0.1-second solution.
-
 
 To contribute or modify the plugin:
 
@@ -164,6 +160,18 @@ To contribute or modify the plugin:
 2. Make your changes
 3. Test with a local Neovim setup
 4. Submit a pull request
+
+## Roadmap
+
+- [x] Edit Neovim buffers from Claude CLI
+- [x] Send and submit messages from Neovim to Claude CLI
+- [ ] Automatic diff views
+- [ ] Answer Claude prompts from Neovim
+- [ ] Send entire buffers to Claude CLI
+
+## The Story Behind ClaudeSend
+
+Curious about the journey of implementing the `:ClaudeSend` command? Read [The Tale of the Delayed Enter Key](story.md) - a whimsical story about our adventures in terminal automation and the discovery of the 0.1-second solution.
 
 ## License
 
