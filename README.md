@@ -13,10 +13,7 @@ A Neovim plugin that connects to Claude Code CLI through the MCP Neovim server, 
 
 ### 1. Install Claude Code CLI
 
-```bash
-# Install Claude Code CLI
-npm install -g @anthropic-ai/claude-code
-```
+Follow the official installation guide at https://claude.ai/code
 
 ### 2. Install the Plugin
 
@@ -47,9 +44,11 @@ use {
 
 ## Getting Started
 
+### Prerequisites Setup
+
 1. **Configure MCP server:**
    ```bash
-   claude mcp add "MCP Neovim Server" -e ALLOW_SHELL_COMMANDS=true -e NVIM_SOCKET_PATH=/tmp/nvim -- npx -y mcp-neovim-server --tcp --port 3000 --host localhost
+   claude mcp add "MCP Neovim Server" -e NVIM_SOCKET_PATH=/tmp/nvim -- npx -y mcp-neovim-server
    ```
 
 2. **Start Neovim with socket:**
@@ -57,108 +56,78 @@ use {
    nvim --listen /tmp/nvim
    ```
 
-3. **Start Claude CLI:**
+3. **Start Claude CLI in a tmux session:**
    ```bash
+   tmux new-session -s claude-cli
    claude
    ```
-
-4. **Connect in Neovim:**
-   ```vim
-   :ClaudeConnect
-   :ClaudeStatus
-   ```
+   
+   **Important:** The plugin requires Claude CLI to be running in a tmux session for `:ClaudeSend` to work properly.
 
 ## Usage
 
 ### Available Commands
 
-- `:ClaudeConnect` - Connect to the MCP server
-- `:ClaudeDisconnect` - Disconnect from the MCP server
-- `:ClaudeAsk <prompt>` - Ask Claude a question
-- `:ClaudeEdit <instruction>` - Edit selected text (use in visual mode)
-- `:ClaudeStatus` - Check connection status
+- `:ClaudeSend <message>` - Send a message directly to Claude CLI and automatically submit it
+  - Requires Claude CLI to be running in a tmux session
+  - Messages are automatically submitted after a 0.1s delay
+  - Example: `:ClaudeSend How do I implement a binary search?`
 
 ### Examples
 
-**Ask Claude a question:**
+**Send a message to Claude:**
 ```vim
-:ClaudeAsk How do I optimize this function?
+:ClaudeSend What is the time complexity of this algorithm?
+:ClaudeSend Explain how this React hook works
+:ClaudeSend Help me debug this error message
 ```
 
-**Edit selected code:**
-1. Select text in visual mode
-2. Run `:ClaudeEdit add error handling`
-
-**Check connection:**
-```vim
-:ClaudeStatus
-```
+The message will appear in your Claude CLI terminal and be automatically submitted.
 
 ## Configuration
 
 ```lua
 require("claude-cli").setup({
-  claude_cmd = "claude",           -- Claude CLI command
-  mcp_server_host = "localhost",   -- MCP server host
-  mcp_server_port = 3000,          -- MCP server port
-  socket_path = "/tmp/nvim",       -- Neovim socket path
-  auto_start_server = false,       -- Auto-start MCP server
-  timeout = 30000,                 -- Connection timeout (ms)
+  -- Currently no configuration is needed for basic functionality
+  -- The plugin will automatically find your Claude CLI tmux session
 })
 ```
 
 ## Troubleshooting
 
-### `:ClaudeStatus` shows "Not connected"
+### `:ClaudeSend` not working
 
-**Step 1: Verify MCP server is running on TCP port 3000**
+**Step 1: Ensure Claude CLI is running in tmux**
 ```bash
-lsof -i :3000
+tmux list-sessions | grep claude
 ```
-Should show a `node` process listening on port 3000.
+You should see a session with "claude" in the name.
 
-**Step 2: Check MCP server configuration**
+**Step 2: Verify Claude CLI is the active process**
 ```bash
-claude mcp list
+tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command}' | grep claude
 ```
-Should show `MCP Neovim Server` with `--tcp --port 3000 --host localhost` flags.
+Look for a pane running `node` (the Claude CLI process).
 
-**Step 3: Test TCP connection**
+**Step 3: Test manual message sending**
 ```bash
-nc -z localhost 3000
+tmux send-keys -t <session>:<pane> "test message" Enter
 ```
-Should output "Connection to localhost port 3000 [tcp/hbci] succeeded!"
-
-**Step 4: Check plugin configuration**
-The plugin uses `127.0.0.1` not `localhost` for TCP connections. If you see "Invalid IP address" errors, verify the plugin config uses IP addresses:
-```lua
-require("claude-cli").setup({
-  mcp_server_host = "127.0.0.1",  -- Use IP, not hostname
-  mcp_server_port = 3000,
-})
-```
+Replace `<session>:<pane>` with your Claude CLI session and pane.
 
 ### Common Issues
 
-**"Invalid IP address or port" error:**
-- The plugin requires IP addresses, not hostnames
-- Change `localhost` to `127.0.0.1` in configuration
+**"Claude CLI process not found" error:**
+- Make sure Claude CLI is running in a tmux session
+- The session name should contain "claude" (e.g., `claude-cli`, `claude-session`)
 
-**MCP server not listening on port 3000:**
-- Remove existing MCP server: `claude mcp remove "MCP Neovim Server"`
-- Re-add with TCP flags: `claude mcp add "MCP Neovim Server" -e ALLOW_SHELL_COMMANDS=true -e NVIM_SOCKET_PATH=/tmp/nvim -- npx -y mcp-neovim-server --tcp --port 3000 --host localhost`
+**Messages appear but don't submit:**
+- The plugin uses a 0.1s delay between typing and submission
+- If messages still don't submit, try increasing the delay in the code
 
-**Connection works but commands fail:**
-- Ensure Neovim socket exists: `ls -la /tmp/nvim`
-- Restart Neovim with socket: `nvim --listen /tmp/nvim`
-
-### Debug Test
-
-Test the plugin connection:
-```bash
-nvim --headless -c "lua require('claude-cli').setup(); require('claude-cli.client').connect(); vim.defer_fn(function() if require('claude-cli.client').is_connected then print('SUCCESS') else print('FAILED') end; vim.cmd('quit') end, 1000)" 2>&1
-```
-Should output "SUCCESS".
+**Nothing happens when using `:ClaudeSend`:**
+- Check that tmux is installed: `which tmux`
+- Ensure you started Claude CLI inside tmux, not in a regular terminal
 
 ## Development
 
