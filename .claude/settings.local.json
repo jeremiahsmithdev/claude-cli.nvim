@@ -3,7 +3,11 @@
     "allow": [
       "mcp__MCP_Neovim_Server__vim_buffer",
       "mcp__MCP_Neovim_Server__vim_command",
-      "Bash(tmux send-keys:*)"
+      "Bash(tmux send-keys:*)",
+      "mcp__MCP_Neovim_Server__vim_file_open",
+      "mcp__MCP_Neovim_Server__vim_edit",
+      "mcp__MCP_Neovim_Server__vim_buffer_save",
+      "mcp__MCP_Neovim_Server__vim_search"
     ],
     "deny": []
   }

@@ -129,6 +129,16 @@ Replace `<session>:<pane>` with your Claude CLI session and pane.
 - Check that tmux is installed: `which tmux`
 - Ensure you started Claude CLI inside tmux, not in a regular terminal
 
+## Claude Code MCP Permissions
+
+This repository includes `.claude/settings.local.json` with commonly used MCP permissions for developing this plugin with Claude Code. These permissions allow Claude to:
+
+- Read and edit Neovim buffers
+- Execute Vim commands
+- Send tmux commands (essential for ClaudeSend functionality)
+- Open, search, and save files in Neovim
+
+**⚠️ Important Security Note**: Always use version control (git) frequently when working with AI assistants. The included permissions are suggestions - review and adjust them based on your comfort level and needs.
 ## Development
 ## The Story Behind ClaudeSend
 
