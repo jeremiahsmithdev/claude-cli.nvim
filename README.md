@@ -65,9 +65,11 @@ use {
    **Important:** The plugin requires Claude CLI to be running in a tmux session for `:ClaudeSend` to work properly.
 
 ## Usage
-
 ### Available Commands
 
+- `:ClaudeConnect` - Connect to the MCP server
+- `:ClaudeDisconnect` - Disconnect from the MCP server
+- `:ClaudeStatus` - Check connection status
 - `:ClaudeSend <message>` - Send a message directly to Claude CLI and automatically submit it
   - Requires Claude CLI to be running in a tmux session
   - Messages are automatically submitted after a 0.1s delay
@@ -75,11 +77,22 @@ use {
 
 ### Examples
 
+**Connect to Claude CLI:**
+```vim
+:ClaudeConnect
+:ClaudeStatus
+```
+
 **Send a message to Claude:**
 ```vim
 :ClaudeSend What is the time complexity of this algorithm?
 :ClaudeSend Explain how this React hook works
 :ClaudeSend Help me debug this error message
+```
+
+**Disconnect when done:**
+```vim
+:ClaudeDisconnect
 ```
 
 The message will appear in your Claude CLI terminal and be automatically submitted.
