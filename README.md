@@ -15,19 +15,10 @@ A Neovim plugin that connects to Claude Code CLI through the MCP Neovim server, 
 
 ```bash
 # Install Claude Code CLI
-npm install -g @anthropic-ai/claude-cli
-
-# Or using pip
-pip install claude-cli
+npm install -g @anthropic-ai/claude-code
 ```
 
-### 2. Install MCP Neovim Server
-
-```bash
-npm install -g @bigcodegen/mcp-neovim-server
-```
-
-### 3. Install the Plugin
+### 2. Install the Plugin
 
 Using **lazy.nvim**:
 
@@ -54,39 +45,28 @@ use {
 }
 ```
 
-## Setup Instructions
+## Getting Started
 
-### Step 1: Start Neovim with Socket
+1. **Configure MCP server:**
+   ```bash
+   claude mcp add "MCP Neovim Server" -e ALLOW_SHELL_COMMANDS=true -e NVIM_SOCKET_PATH=/tmp/nvim -- npx -y mcp-neovim-server --tcp --port 3000 --host localhost
+   ```
 
-Start Neovim with a socket for the MCP server to connect to:
+2. **Start Neovim with socket:**
+   ```bash
+   nvim --listen /tmp/nvim
+   ```
 
-```bash
-nvim --listen /tmp/nvim
-```
+3. **Start Claude CLI:**
+   ```bash
+   claude
+   ```
 
-### Step 2: Start MCP Neovim Server
-
-In a separate terminal, start the MCP server:
-
-```bash
-npx @bigcodegen/mcp-neovim-server --socket /tmp/nvim
-```
-
-### Step 3: Start Claude Code CLI with MCP
-
-In another terminal, start Claude Code CLI and connect it to the MCP server:
-
-```bash
-claude --mcp-server http://localhost:3000
-```
-
-### Step 4: Connect in Neovim
-
-In Neovim, connect to the MCP server:
-
-```vim
-:ClaudeConnect
-```
+4. **Connect in Neovim:**
+   ```vim
+   :ClaudeConnect
+   :ClaudeStatus
+   ```
 
 ## Usage
 
@@ -129,28 +109,56 @@ require("claude-cli").setup({
 
 ## Troubleshooting
 
-### Connection Issues
+### `:ClaudeStatus` shows "Not connected"
 
-1. **Check if Neovim socket exists:**
-   ```bash
-   ls -la /tmp/nvim
-   ```
+**Step 1: Verify MCP server is running on TCP port 3000**
+```bash
+lsof -i :3000
+```
+Should show a `node` process listening on port 3000.
 
-2. **Verify MCP server is running:**
-   ```bash
-   curl http://localhost:3000/health
-   ```
+**Step 2: Check MCP server configuration**
+```bash
+claude mcp list
+```
+Should show `MCP Neovim Server` with `--tcp --port 3000 --host localhost` flags.
 
-3. **Check Claude CLI connection:**
-   ```bash
-   claude --version
-   ```
+**Step 3: Test TCP connection**
+```bash
+nc -z localhost 3000
+```
+Should output "Connection to localhost port 3000 [tcp/hbci] succeeded!"
 
-### Common Problems
+**Step 4: Check plugin configuration**
+The plugin uses `127.0.0.1` not `localhost` for TCP connections. If you see "Invalid IP address" errors, verify the plugin config uses IP addresses:
+```lua
+require("claude-cli").setup({
+  mcp_server_host = "127.0.0.1",  -- Use IP, not hostname
+  mcp_server_port = 3000,
+})
+```
 
-- **Socket not found**: Ensure Neovim was started with `--listen /tmp/nvim`
-- **MCP server not responding**: Restart the MCP server
-- **Claude CLI not connected**: Check your Claude CLI authentication and MCP connection
+### Common Issues
+
+**"Invalid IP address or port" error:**
+- The plugin requires IP addresses, not hostnames
+- Change `localhost` to `127.0.0.1` in configuration
+
+**MCP server not listening on port 3000:**
+- Remove existing MCP server: `claude mcp remove "MCP Neovim Server"`
+- Re-add with TCP flags: `claude mcp add "MCP Neovim Server" -e ALLOW_SHELL_COMMANDS=true -e NVIM_SOCKET_PATH=/tmp/nvim -- npx -y mcp-neovim-server --tcp --port 3000 --host localhost`
+
+**Connection works but commands fail:**
+- Ensure Neovim socket exists: `ls -la /tmp/nvim`
+- Restart Neovim with socket: `nvim --listen /tmp/nvim`
+
+### Debug Test
+
+Test the plugin connection:
+```bash
+nvim --headless -c "lua require('claude-cli').setup(); require('claude-cli.client').connect(); vim.defer_fn(function() if require('claude-cli.client').is_connected then print('SUCCESS') else print('FAILED') end; vim.cmd('quit') end, 1000)" 2>&1
+```
+Should output "SUCCESS".
 
 ## Development
 

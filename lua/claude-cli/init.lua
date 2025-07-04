@@ -2,7 +2,7 @@ local M = {}
 
 M.config = {
   claude_cmd = "claude",
-  mcp_server_host = "localhost",
+  mcp_server_host = "127.0.0.1",
   mcp_server_port = 3000,
   auto_start_server = false,
   socket_path = "/tmp/nvim",
