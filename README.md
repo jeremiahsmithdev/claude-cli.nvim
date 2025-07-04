@@ -130,6 +130,10 @@ Replace `<session>:<pane>` with your Claude CLI session and pane.
 - Ensure you started Claude CLI inside tmux, not in a regular terminal
 
 ## Development
+## The Story Behind ClaudeSend
+
+Curious about the journey of implementing the `:ClaudeSend` command? Read [The Tale of the Delayed Enter Key](story.md) - a whimsical story about our adventures in terminal automation and the discovery of the 0.1-second solution.
+
 
 To contribute or modify the plugin:
 
